@@ -142,3 +142,93 @@ $$
                    get_unique_keys(schema_name, table_name));
 $$
 LANGUAGE SQL;
+
+CREATE TABLE __table_logs__ (
+  ts TIMESTAMP NOT NULL,
+  txid BIGINT NOT NULL,
+  dbuser NAME NOT NULL,
+  schemaname NAME NOT NULL,
+  tablename NAME NOT NULL,
+  event TEXT NOT NULL,
+  col_names TEXT[] NOT NULL,
+  old_vals TEXT[],
+  new_vals TEXT[],
+  key_names TEXT[] NOT NULL,
+  key_vals TEXT[]
+);
+
+CREATE OR REPLACE FUNCTION tablelog_logging_trigger()
+  RETURNS TRIGGER
+AS
+$$
+  # ----------------------------
+  # 主キーまたはユニークキーを構成するカラム名を取得する
+  # ----------------------------
+  @key_names = split(/,/, ${$_TD->{args}}[0]);
+  $key_names_literal = "ARRAY['" . join("','", @key_names) . "']";
+
+  # ----------------------------
+  # 主キーまたはユニークキーの値をカラム名の順番に配列にする
+  # ----------------------------
+  if (defined($_TD->{old})) {
+    @key_vals = ();
+    foreach (@key_names) {
+      push(@key_vals, $_TD->{old}{$_});
+    }
+    $key_vals_literal = "ARRAY['" . join("','", @key_vals) . "']";
+  }
+  else {
+    $key_vals_literal = 'null';
+  }
+
+  # ----------------------------
+  # テーブルの全カラム名を配列にする
+  # ----------------------------
+  @cols = ();
+  if (defined($_TD->{old})) {
+    push(@cols, keys $_TD->{old});
+  }
+  elsif (defined($_TD->{new})) {
+    push(@cols, keys $_TD->{new});
+  }
+  $col_names_literal = "ARRAY['" . join("','", @cols) . "']";
+
+  # ----------------------------------
+  # 更新前のレコードの値をカラム名の順番に配列にする
+  # ----------------------------------
+  if (defined($_TD->{old})) {
+    @old_vals = ();
+    foreach (@cols) {
+      push(@old_vals, $_TD->{old}{$_});
+    }
+    $old_vals_literal = "ARRAY['" . join("','", @old_vals) . "']";
+  }
+  else {
+    $old_vals_literal = 'null';
+  }
+
+  # ----------------------------------
+  # 更新後のレコードの値をカラム名の順番に配列にする
+  # ----------------------------------
+  if (defined($_TD->{new})) {
+    @new_vals = ();
+    foreach (@cols) {
+      push(@new_vals, $_TD->{new}{$_});
+    }
+    $new_vals_literal = "ARRAY['" . join("','", @new_vals) . "']";
+  }
+  else {
+    $new_vals_literal = 'null';
+  }
+
+  # ----------------------------------
+  # 更新情報をログテーブルに記録する
+  # ----------------------------------
+  $q = "INSERT INTO __table_logs__ VALUES(clock_timestamp(), txid_current(), current_user, '" . $_TD->{table_schema} . "', '" . $_TD->{table_name} . "', '" . $_TD->{event} . "', " . $col_names_literal . ", " . $old_vals_literal . ", " . $new_vals_literal . ", " . $key_names_literal . ", " . $key_vals_literal . ")";
+  elog(DEBUG, $q);
+  
+  $rs = spi_exec_query($q);
+
+  return;
+$$
+LANGUAGE 'plperl';

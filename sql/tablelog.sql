@@ -66,3 +66,38 @@ SELECT get_logging_keys('public', 't1_u3');  -- {uname}
 SELECT get_logging_keys('public', 't1_u4');  -- {uid,uname}
 SELECT get_logging_keys('public', 't1_p');   -- {uid}
 SELECT get_logging_keys('public', 't1_p2');  -- {uid,uname}
+
+
+CREATE TRIGGER public_t1_u_logging_trigger
+  AFTER INSERT OR UPDATE OR DELETE ON public.t1_u
+  FOR EACH ROW EXECUTE PROCEDURE tablelog_logging_trigger('uid');
+
+CREATE TRIGGER public_t1_u4_logging_trigger
+  AFTER INSERT OR UPDATE OR DELETE ON public.t1_u4
+  FOR EACH ROW EXECUTE PROCEDURE tablelog_logging_trigger('uid,uname');
+
+BEGIN;
+INSERT INTO t1_u VALUES (1, 'user1');
+UPDATE t1_u SET uname = 'user01';
+DELETE FROM t1_u;
+COMMIT;
+
+BEGIN;
+INSERT INTO t1_u4 VALUES (1, 'user1');
+UPDATE t1_u4 SET uname = 'user01';
+DELETE FROM t1_u4;
+COMMIT;
+
+SELECT
+  schemaname,
+  tablename,
+  event,
+  col_names,
+  old_vals,
+  new_vals,
+  key_names,
+  key_vals
+FROM
+  __table_logs__
+ORDER BY
+  txid, ts;
