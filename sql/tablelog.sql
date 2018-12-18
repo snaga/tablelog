@@ -21,6 +21,17 @@ CREATE TABLE t1_u2 (
   uname text unique
 );
 
+CREATE TABLE t1_u3 (
+  uid integer,
+  uname text unique
+);
+
+CREATE TABLE t1_u4 (
+  uid integer,
+  uname text,
+  unique(uid, uname)
+);
+
 CREATE TABLE t1_p (
   uid integer primary key,
   uname text
@@ -37,3 +48,11 @@ SELECT get_primary_keys('public', 't1_u');   -- NULL
 SELECT get_primary_keys('public', 't1_u2');  -- NULL
 SELECT get_primary_keys('public', 't1_p');   -- {uid}
 SELECT get_primary_keys('public', 't1_p2');  -- {uid,uname}
+
+SELECT get_unique_keys('public', 't1');     -- NULL
+SELECT get_unique_keys('public', 't1_u');   -- {uid}
+SELECT get_unique_keys('public', 't1_u2');  -- {uid}
+SELECT get_unique_keys('public', 't1_u3');  -- {uname}
+SELECT get_unique_keys('public', 't1_u4');  -- {uid,uname}
+SELECT get_unique_keys('public', 't1_p');   -- NULL
+SELECT get_unique_keys('public', 't1_p2');  -- NULL
