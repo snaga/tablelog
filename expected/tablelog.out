@@ -1,0 +1,62 @@
+CREATE EXTENSION tablelog;
+DROP TABLE IF EXISTS t1;
+NOTICE:  table "t1" does not exist, skipping
+DROP TABLE IF EXISTS t1_u;
+NOTICE:  table "t1_u" does not exist, skipping
+DROP TABLE IF EXISTS t1_u2;
+NOTICE:  table "t1_u2" does not exist, skipping
+DROP TABLE IF EXISTS t1_p;
+NOTICE:  table "t1_p" does not exist, skipping
+DROP TABLE IF EXISTS t1_p2;
+NOTICE:  table "t1_p2" does not exist, skipping
+CREATE TABLE t1 (
+  uid integer,
+  uname text
+);
+CREATE TABLE t1_u (
+  uid integer unique,
+  uname text
+);
+CREATE TABLE t1_u2 (
+  uid integer unique,
+  uname text unique
+);
+CREATE TABLE t1_p (
+  uid integer primary key,
+  uname text
+);
+CREATE TABLE t1_p2 (
+  uid integer,
+  uname text,
+  primary key(uid,uname)
+);
+SELECT get_primary_keys('public', 't1');     -- NULL
+ get_primary_keys 
+------------------
+ 
+(1 row)
+
+SELECT get_primary_keys('public', 't1_u');   -- NULL
+ get_primary_keys 
+------------------
+ 
+(1 row)
+
+SELECT get_primary_keys('public', 't1_u2');  -- NULL
+ get_primary_keys 
+------------------
+ 
+(1 row)
+
+SELECT get_primary_keys('public', 't1_p');   -- {uid}
+ get_primary_keys 
+------------------
+ {uid}
+(1 row)
+
+SELECT get_primary_keys('public', 't1_p2');  -- {uid,uname}
+ get_primary_keys 
+------------------
+ {uid,uname}
+(1 row)
+
