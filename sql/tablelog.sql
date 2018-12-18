@@ -88,6 +88,82 @@ UPDATE t1_u4 SET uname = 'user01';
 DELETE FROM t1_u4;
 COMMIT;
 
+DROP TRIGGER public_t1_u_logging_trigger ON public.t1_u;
+DROP TRIGGER public_t1_u4_logging_trigger ON public.t1_u4;
+
+\d t1_u
+\d t1_u4
+
+SELECT
+  schemaname,
+  tablename,
+  event,
+  col_names,
+  old_vals,
+  new_vals,
+  key_names,
+  key_vals
+FROM
+  __table_logs__
+ORDER BY
+  txid, ts;
+
+TRUNCATE TABLE __table_logs__;
+
+SELECT
+  schemaname,
+  tablename,
+  event,
+  col_names,
+  old_vals,
+  new_vals,
+  key_names,
+  key_vals
+FROM
+  __table_logs__
+ORDER BY
+  txid, ts;
+
+INSERT INTO t1_u4 VALUES (1, 'user1');
+
+SELECT
+  schemaname,
+  tablename,
+  event,
+  col_names,
+  old_vals,
+  new_vals,
+  key_names,
+  key_vals
+FROM
+  __table_logs__
+ORDER BY
+  txid, ts;
+
+SELECT
+  tablelog_enable_logging('public', 't1_u4');
+
+UPDATE t1_u4 SET uname = 'user01';
+
+SELECT
+  schemaname,
+  tablename,
+  event,
+  col_names,
+  old_vals,
+  new_vals,
+  key_names,
+  key_vals
+FROM
+  __table_logs__
+ORDER BY
+  txid, ts;
+
+SELECT
+  tablelog_disable_logging('public', 't1_u4');
+
+DELETE FROM t1_u4;
+
 SELECT
   schemaname,
   tablename,

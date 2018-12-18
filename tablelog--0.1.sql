@@ -246,3 +246,51 @@ $$
   return;
 $$
 LANGUAGE 'plperl';
+
+CREATE OR REPLACE FUNCTION tablelog_enable_logging(schema_name TEXT, table_name TEXT)
+  RETURNS boolean
+AS
+$$
+DECLARE
+  trigger_name TEXT;
+  schema_table_name TEXT;
+  ddl TEXT;
+  keys TEXT;
+BEGIN
+  trigger_name = schema_name || '_' || table_name || '_trigger';
+  schema_table_name = schema_name || '.' || table_name;
+
+  keys = array_to_string(get_logging_keys(schema_name, table_name), ',');
+
+  ddl = 'CREATE TRIGGER ' || trigger_name || '
+           AFTER INSERT OR UPDATE OR DELETE ON ' || schema_table_name || '
+           FOR EACH ROW
+           EXECUTE PROCEDURE tablelog_logging_trigger(''' || keys || ''')';
+  EXECUTE ddl;
+
+  RETURN true;
+END
+$$
+LANGUAGE 'plpgsql';
+
+CREATE OR REPLACE FUNCTION tablelog_disable_logging(schema_name TEXT, table_name TEXT)
+  RETURNS boolean
+AS
+$$
+DECLARE
+  trigger_name TEXT;
+  schema_table_name TEXT;
+  ddl TEXT;
+  keys TEXT;
+BEGIN
+  trigger_name = schema_name || '_' || table_name || '_trigger';
+  schema_table_name = schema_name || '.' || table_name;
+
+  ddl = 'DROP TRIGGER ' || trigger_name || ' ON ' || schema_table_name;
+  EXECUTE ddl;
+
+  RETURN true;
+END
+$$
+LANGUAGE 'plpgsql';
+
