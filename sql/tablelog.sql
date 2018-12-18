@@ -177,3 +177,6 @@ FROM
   __table_logs__
 ORDER BY
   txid, ts;
+
+SELECT
+  tablelog_enable_logging('public', 't1');

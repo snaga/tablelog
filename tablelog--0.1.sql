@@ -262,6 +262,10 @@ BEGIN
 
   keys = array_to_string(get_logging_keys(schema_name, table_name), ',');
 
+  IF keys IS NULL THEN
+    RAISE EXCEPTION 'Primary key or unique key not found on the table.';
+  END IF;
+
   ddl = 'CREATE TRIGGER ' || trigger_name || '
            AFTER INSERT OR UPDATE OR DELETE ON ' || schema_table_name || '
            FOR EACH ROW

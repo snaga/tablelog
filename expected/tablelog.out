@@ -306,3 +306,7 @@ ORDER BY
  public     | t1_u4     | UPDATE | {uname}   | {user1}  | {user01} | {uid,uname} | {1,user1}
 (1 row)
 
+SELECT
+  tablelog_enable_logging('public', 't1');
+ERROR:  Primary key or unique key not found on the table.
+CONTEXT:  PL/pgSQL function tablelog_enable_logging(text,text) line 14 at RAISE
