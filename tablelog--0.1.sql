@@ -191,6 +191,20 @@ $$
   elsif (defined($_TD->{new})) {
     push(@cols, keys $_TD->{new});
   }
+
+  # ----------------------------
+  # UPDATEの場合は、更新のあったカラムに絞る
+  # ----------------------------
+  if (defined($_TD->{old}) && defined($_TD->{new})) {
+    @changed_cols = ();
+    foreach (@cols) {
+      if ($_TD->{old}{$_} ne $_TD->{new}{$_}) {
+        push(@changed_cols, $_);
+      }
+    }
+    @cols = @changed_cols;
+  }
+
   $col_names_literal = "ARRAY['" . join("','", @cols) . "']";
 
   # ----------------------------------

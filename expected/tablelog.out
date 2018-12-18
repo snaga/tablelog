@@ -188,13 +188,13 @@ FROM
   __table_logs__
 ORDER BY
   txid, ts;
- schemaname | tablename | event  |  col_names  |  old_vals  |  new_vals  |  key_names  |  key_vals  
-------------+-----------+--------+-------------+------------+------------+-------------+------------
- public     | t1_u      | INSERT | {uname,uid} |            | {user1,1}  | {uid}       | 
- public     | t1_u      | UPDATE | {uname,uid} | {user1,1}  | {user01,1} | {uid}       | {1}
- public     | t1_u      | DELETE | {uname,uid} | {user01,1} |            | {uid}       | {1}
- public     | t1_u4     | INSERT | {uname,uid} |            | {user1,1}  | {uid,uname} | 
- public     | t1_u4     | UPDATE | {uname,uid} | {user1,1}  | {user01,1} | {uid,uname} | {1,user1}
- public     | t1_u4     | DELETE | {uname,uid} | {user01,1} |            | {uid,uname} | {1,user01}
+ schemaname | tablename | event  |  col_names  |  old_vals  | new_vals  |  key_names  |  key_vals  
+------------+-----------+--------+-------------+------------+-----------+-------------+------------
+ public     | t1_u      | INSERT | {uname,uid} |            | {user1,1} | {uid}       | 
+ public     | t1_u      | UPDATE | {uname}     | {user1}    | {user01}  | {uid}       | {1}
+ public     | t1_u      | DELETE | {uname,uid} | {user01,1} |           | {uid}       | {1}
+ public     | t1_u4     | INSERT | {uname,uid} |            | {user1,1} | {uid,uname} | 
+ public     | t1_u4     | UPDATE | {uname}     | {user1}    | {user01}  | {uid,uname} | {1,user1}
+ public     | t1_u4     | DELETE | {uname,uid} | {user01,1} |           | {uid,uname} | {1,user01}
 (6 rows)
 
