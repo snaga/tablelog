@@ -57,8 +57,6 @@ SELECT get_unique_keys('public', 't1_u4');  -- {uid,uname}
 SELECT get_unique_keys('public', 't1_p');   -- NULL
 SELECT get_unique_keys('public', 't1_p2');  -- NULL
 
-SELECT get_column_names('public', 't1_u4');  -- {uid,uname}
-
 SELECT get_logging_keys('public', 't1');     -- NULL
 SELECT get_logging_keys('public', 't1_u');   -- {uid}
 SELECT get_logging_keys('public', 't1_u2');  -- {uid}
