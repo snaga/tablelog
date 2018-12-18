@@ -56,3 +56,5 @@ SELECT get_unique_keys('public', 't1_u3');  -- {uname}
 SELECT get_unique_keys('public', 't1_u4');  -- {uid,uname}
 SELECT get_unique_keys('public', 't1_p');   -- NULL
 SELECT get_unique_keys('public', 't1_p2');  -- NULL
+
+SELECT get_column_names('public', 't1_u4');  -- {uid,uname}
