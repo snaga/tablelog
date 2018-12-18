@@ -96,44 +96,6 @@ END
 $$
 LANGUAGE 'plpgsql';
 
-CREATE OR REPLACE FUNCTION get_column_names(schema_name TEXT, table_name TEXT)
-  RETURNS TEXT[]
-AS
-$$
-DECLARE
-  column_names TEXT[];
-BEGIN
-
-    WITH temp AS (
-    SELECT
-      attname
-    FROM
-      pg_attribute a,
-      pg_class c,
-      pg_namespace n
-    WHERE
-      attnum > 0
-    AND
-      a.attrelid = c.oid
-    AND
-      c.relname = 't1_u4'
-    AND
-      c.relnamespace = n.oid
-    AND
-      n.nspname = 'public'
-    ORDER BY
-      attnum
-    )
-    SELECT INTO column_names
-      array_agg(attname)
-    FROM
-      temp;
-
-  RETURN column_names;
-END
-$$
-LANGUAGE 'plpgsql';
-
 CREATE OR REPLACE FUNCTION get_logging_keys(schema_name TEXT, table_name TEXT)
   RETURNS TEXT[]
 AS
