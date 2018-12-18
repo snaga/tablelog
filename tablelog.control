@@ -1,0 +1,5 @@
+# tablelog extension
+comment = 'record table modification logs'
+default_version = '0.1'
+#module_pathname = '$libdir/tablelog'
+relocatable = true
