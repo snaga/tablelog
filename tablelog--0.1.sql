@@ -133,3 +133,12 @@ BEGIN
 END
 $$
 LANGUAGE 'plpgsql';
+
+CREATE OR REPLACE FUNCTION get_logging_keys(schema_name TEXT, table_name TEXT)
+  RETURNS TEXT[]
+AS
+$$
+   SELECT coalesce(get_primary_keys(schema_name, table_name),
+                   get_unique_keys(schema_name, table_name));
+$$
+LANGUAGE SQL;

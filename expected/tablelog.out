@@ -117,3 +117,45 @@ SELECT get_column_names('public', 't1_u4');  -- {uid,uname}
  {uid,uname}
 (1 row)
 
+SELECT get_logging_keys('public', 't1');     -- NULL
+ get_logging_keys 
+------------------
+ 
+(1 row)
+
+SELECT get_logging_keys('public', 't1_u');   -- {uid}
+ get_logging_keys 
+------------------
+ {uid}
+(1 row)
+
+SELECT get_logging_keys('public', 't1_u2');  -- {uid}
+ get_logging_keys 
+------------------
+ {uid}
+(1 row)
+
+SELECT get_logging_keys('public', 't1_u3');  -- {uname}
+ get_logging_keys 
+------------------
+ {uname}
+(1 row)
+
+SELECT get_logging_keys('public', 't1_u4');  -- {uid,uname}
+ get_logging_keys 
+------------------
+ {uid,uname}
+(1 row)
+
+SELECT get_logging_keys('public', 't1_p');   -- {uid}
+ get_logging_keys 
+------------------
+ {uid}
+(1 row)
+
+SELECT get_logging_keys('public', 't1_p2');  -- {uid,uname}
+ get_logging_keys 
+------------------
+ {uid,uname}
+(1 row)
+
