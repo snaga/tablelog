@@ -142,3 +142,159 @@ $$
                    get_unique_keys(schema_name, table_name));
 $$
 LANGUAGE SQL;
+
+CREATE TABLE __table_logs__ (
+  ts TIMESTAMP NOT NULL,
+  txid BIGINT NOT NULL,
+  dbuser NAME NOT NULL,
+  schemaname NAME NOT NULL,
+  tablename NAME NOT NULL,
+  event TEXT NOT NULL,
+  col_names TEXT[] NOT NULL,
+  old_vals TEXT[],
+  new_vals TEXT[],
+  key_names TEXT[] NOT NULL,
+  key_vals TEXT[]
+);
+
+CREATE OR REPLACE FUNCTION tablelog_logging_trigger()
+  RETURNS TRIGGER
+AS
+$$
+  # ----------------------------
+  # 主キーまたはユニークキーを構成するカラム名を取得する
+  # ----------------------------
+  @key_names = split(/,/, ${$_TD->{args}}[0]);
+  $key_names_literal = "ARRAY['" . join("','", @key_names) . "']";
+
+  # ----------------------------
+  # 主キーまたはユニークキーの値をカラム名の順番に配列にする
+  # ----------------------------
+  if (defined($_TD->{old})) {
+    @key_vals = ();
+    foreach (@key_names) {
+      push(@key_vals, $_TD->{old}{$_});
+    }
+    $key_vals_literal = "ARRAY['" . join("','", @key_vals) . "']";
+  }
+  else {
+    $key_vals_literal = 'null';
+  }
+
+  # ----------------------------
+  # テーブルの全カラム名を配列にする
+  # ----------------------------
+  @cols = ();
+  if (defined($_TD->{old})) {
+    push(@cols, keys $_TD->{old});
+  }
+  elsif (defined($_TD->{new})) {
+    push(@cols, keys $_TD->{new});
+  }
+
+  # ----------------------------
+  # UPDATEの場合は、更新のあったカラムに絞る
+  # ----------------------------
+  if (defined($_TD->{old}) && defined($_TD->{new})) {
+    @changed_cols = ();
+    foreach (@cols) {
+      if ($_TD->{old}{$_} ne $_TD->{new}{$_}) {
+        push(@changed_cols, $_);
+      }
+    }
+    @cols = @changed_cols;
+  }
+
+  $col_names_literal = "ARRAY['" . join("','", @cols) . "']";
+
+  # ----------------------------------
+  # 更新前のレコードの値をカラム名の順番に配列にする
+  # ----------------------------------
+  if (defined($_TD->{old})) {
+    @old_vals = ();
+    foreach (@cols) {
+      push(@old_vals, $_TD->{old}{$_});
+    }
+    $old_vals_literal = "ARRAY['" . join("','", @old_vals) . "']";
+  }
+  else {
+    $old_vals_literal = 'null';
+  }
+
+  # ----------------------------------
+  # 更新後のレコードの値をカラム名の順番に配列にする
+  # ----------------------------------
+  if (defined($_TD->{new})) {
+    @new_vals = ();
+    foreach (@cols) {
+      push(@new_vals, $_TD->{new}{$_});
+    }
+    $new_vals_literal = "ARRAY['" . join("','", @new_vals) . "']";
+  }
+  else {
+    $new_vals_literal = 'null';
+  }
+
+  # ----------------------------------
+  # 更新情報をログテーブルに記録する
+  # ----------------------------------
+  $q = "INSERT INTO __table_logs__ VALUES(clock_timestamp(), txid_current(), current_user, '" . $_TD->{table_schema} . "', '" . $_TD->{table_name} . "', '" . $_TD->{event} . "', " . $col_names_literal . ", " . $old_vals_literal . ", " . $new_vals_literal . ", " . $key_names_literal . ", " . $key_vals_literal . ")";
+  elog(DEBUG, $q);
+  
+  $rs = spi_exec_query($q);
+
+  return;
+$$
+LANGUAGE 'plperl';
+
+CREATE OR REPLACE FUNCTION tablelog_enable_logging(schema_name TEXT, table_name TEXT)
+  RETURNS boolean
+AS
+$$
+DECLARE
+  trigger_name TEXT;
+  schema_table_name TEXT;
+  ddl TEXT;
+  keys TEXT;
+BEGIN
+  trigger_name = schema_name || '_' || table_name || '_trigger';
+  schema_table_name = schema_name || '.' || table_name;
+
+  keys = array_to_string(get_logging_keys(schema_name, table_name), ',');
+
+  IF keys IS NULL THEN
+    RAISE EXCEPTION 'Primary key or unique key not found on the table.';
+  END IF;
+
+  ddl = 'CREATE TRIGGER ' || trigger_name || '
+           AFTER INSERT OR UPDATE OR DELETE ON ' || schema_table_name || '
+           FOR EACH ROW
+           EXECUTE PROCEDURE tablelog_logging_trigger(''' || keys || ''')';
+  EXECUTE ddl;
+
+  RETURN true;
+END
+$$
+LANGUAGE 'plpgsql';
+
+CREATE OR REPLACE FUNCTION tablelog_disable_logging(schema_name TEXT, table_name TEXT)
+  RETURNS boolean
+AS
+$$
+DECLARE
+  trigger_name TEXT;
+  schema_table_name TEXT;
+  ddl TEXT;
+  keys TEXT;
+BEGIN
+  trigger_name = schema_name || '_' || table_name || '_trigger';
+  schema_table_name = schema_name || '.' || table_name;
+
+  ddl = 'DROP TRIGGER ' || trigger_name || ' ON ' || schema_table_name;
+  EXECUTE ddl;
+
+  RETURN true;
+END
+$$
+LANGUAGE 'plpgsql';
+

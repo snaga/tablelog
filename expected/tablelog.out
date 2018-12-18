@@ -159,3 +159,154 @@ SELECT get_logging_keys('public', 't1_p2');  -- {uid,uname}
  {uid,uname}
 (1 row)
 
+CREATE TRIGGER public_t1_u_logging_trigger
+  AFTER INSERT OR UPDATE OR DELETE ON public.t1_u
+  FOR EACH ROW EXECUTE PROCEDURE tablelog_logging_trigger('uid');
+CREATE TRIGGER public_t1_u4_logging_trigger
+  AFTER INSERT OR UPDATE OR DELETE ON public.t1_u4
+  FOR EACH ROW EXECUTE PROCEDURE tablelog_logging_trigger('uid,uname');
+BEGIN;
+INSERT INTO t1_u VALUES (1, 'user1');
+UPDATE t1_u SET uname = 'user01';
+DELETE FROM t1_u;
+COMMIT;
+BEGIN;
+INSERT INTO t1_u4 VALUES (1, 'user1');
+UPDATE t1_u4 SET uname = 'user01';
+DELETE FROM t1_u4;
+COMMIT;
+DROP TRIGGER public_t1_u_logging_trigger ON public.t1_u;
+DROP TRIGGER public_t1_u4_logging_trigger ON public.t1_u4;
+\d t1_u
+                Table "public.t1_u"
+ Column |  Type   | Collation | Nullable | Default 
+--------+---------+-----------+----------+---------
+ uid    | integer |           |          | 
+ uname  | text    |           |          | 
+Indexes:
+    "t1_u_uid_key" UNIQUE CONSTRAINT, btree (uid)
+
+\d t1_u4
+               Table "public.t1_u4"
+ Column |  Type   | Collation | Nullable | Default 
+--------+---------+-----------+----------+---------
+ uid    | integer |           |          | 
+ uname  | text    |           |          | 
+Indexes:
+    "t1_u4_uid_uname_key" UNIQUE CONSTRAINT, btree (uid, uname)
+
+SELECT
+  schemaname,
+  tablename,
+  event,
+  col_names,
+  old_vals,
+  new_vals,
+  key_names,
+  key_vals
+FROM
+  __table_logs__
+ORDER BY
+  txid, ts;
+ schemaname | tablename | event  |  col_names  |  old_vals  | new_vals  |  key_names  |  key_vals  
+------------+-----------+--------+-------------+------------+-----------+-------------+------------
+ public     | t1_u      | INSERT | {uname,uid} |            | {user1,1} | {uid}       | 
+ public     | t1_u      | UPDATE | {uname}     | {user1}    | {user01}  | {uid}       | {1}
+ public     | t1_u      | DELETE | {uname,uid} | {user01,1} |           | {uid}       | {1}
+ public     | t1_u4     | INSERT | {uname,uid} |            | {user1,1} | {uid,uname} | 
+ public     | t1_u4     | UPDATE | {uname}     | {user1}    | {user01}  | {uid,uname} | {1,user1}
+ public     | t1_u4     | DELETE | {uname,uid} | {user01,1} |           | {uid,uname} | {1,user01}
+(6 rows)
+
+TRUNCATE TABLE __table_logs__;
+SELECT
+  schemaname,
+  tablename,
+  event,
+  col_names,
+  old_vals,
+  new_vals,
+  key_names,
+  key_vals
+FROM
+  __table_logs__
+ORDER BY
+  txid, ts;
+ schemaname | tablename | event | col_names | old_vals | new_vals | key_names | key_vals 
+------------+-----------+-------+-----------+----------+----------+-----------+----------
+(0 rows)
+
+INSERT INTO t1_u4 VALUES (1, 'user1');
+SELECT
+  schemaname,
+  tablename,
+  event,
+  col_names,
+  old_vals,
+  new_vals,
+  key_names,
+  key_vals
+FROM
+  __table_logs__
+ORDER BY
+  txid, ts;
+ schemaname | tablename | event | col_names | old_vals | new_vals | key_names | key_vals 
+------------+-----------+-------+-----------+----------+----------+-----------+----------
+(0 rows)
+
+SELECT
+  tablelog_enable_logging('public', 't1_u4');
+ tablelog_enable_logging 
+-------------------------
+ t
+(1 row)
+
+UPDATE t1_u4 SET uname = 'user01';
+SELECT
+  schemaname,
+  tablename,
+  event,
+  col_names,
+  old_vals,
+  new_vals,
+  key_names,
+  key_vals
+FROM
+  __table_logs__
+ORDER BY
+  txid, ts;
+ schemaname | tablename | event  | col_names | old_vals | new_vals |  key_names  | key_vals  
+------------+-----------+--------+-----------+----------+----------+-------------+-----------
+ public     | t1_u4     | UPDATE | {uname}   | {user1}  | {user01} | {uid,uname} | {1,user1}
+(1 row)
+
+SELECT
+  tablelog_disable_logging('public', 't1_u4');
+ tablelog_disable_logging 
+--------------------------
+ t
+(1 row)
+
+DELETE FROM t1_u4;
+SELECT
+  schemaname,
+  tablename,
+  event,
+  col_names,
+  old_vals,
+  new_vals,
+  key_names,
+  key_vals
+FROM
+  __table_logs__
+ORDER BY
+  txid, ts;
+ schemaname | tablename | event  | col_names | old_vals | new_vals |  key_names  | key_vals  
+------------+-----------+--------+-----------+----------+----------+-------------+-----------
+ public     | t1_u4     | UPDATE | {uname}   | {user1}  | {user01} | {uid,uname} | {1,user1}
+(1 row)
+
+SELECT
+  tablelog_enable_logging('public', 't1');
+ERROR:  Primary key or unique key not found on the table.
+CONTEXT:  PL/pgSQL function tablelog_enable_logging(text,text) line 14 at RAISE
