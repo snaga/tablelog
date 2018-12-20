@@ -100,7 +100,8 @@ SELECT
   old_vals,
   new_vals,
   key_names,
-  key_vals
+  key_vals,
+  status
 FROM
   __table_logs__
 ORDER BY
@@ -116,7 +117,8 @@ SELECT
   old_vals,
   new_vals,
   key_names,
-  key_vals
+  key_vals,
+  status
 FROM
   __table_logs__
 ORDER BY
@@ -132,7 +134,8 @@ SELECT
   old_vals,
   new_vals,
   key_names,
-  key_vals
+  key_vals,
+  status
 FROM
   __table_logs__
 ORDER BY
@@ -151,7 +154,8 @@ SELECT
   old_vals,
   new_vals,
   key_names,
-  key_vals
+  key_vals,
+  status
 FROM
   __table_logs__
 ORDER BY
@@ -170,7 +174,8 @@ SELECT
   old_vals,
   new_vals,
   key_names,
-  key_vals
+  key_vals,
+  status
 FROM
   __table_logs__
 ORDER BY

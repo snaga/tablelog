@@ -116,7 +116,8 @@ CREATE TABLE __table_logs__ (
   old_vals TEXT[],
   new_vals TEXT[],
   key_names TEXT[] NOT NULL,
-  key_vals TEXT[]
+  key_vals TEXT[],
+  status SMALLINT NOT NULL DEFAULT 0
 );
 
 CREATE OR REPLACE FUNCTION tablelog_logging_trigger()

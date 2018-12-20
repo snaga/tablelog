@@ -197,19 +197,20 @@ SELECT
   old_vals,
   new_vals,
   key_names,
-  key_vals
+  key_vals,
+  status
 FROM
   __table_logs__
 ORDER BY
   txid, ts;
- schemaname | tablename | event  |  col_names  |  old_vals  | new_vals  |  key_names  |  key_vals  
-------------+-----------+--------+-------------+------------+-----------+-------------+------------
- public     | t1_u      | INSERT | {uname,uid} |            | {user1,1} | {uid}       | 
- public     | t1_u      | UPDATE | {uname}     | {user1}    | {user01}  | {uid}       | {1}
- public     | t1_u      | DELETE | {uname,uid} | {user01,1} |           | {uid}       | {1}
- public     | t1_u4     | INSERT | {uname,uid} |            | {user1,1} | {uid,uname} | 
- public     | t1_u4     | UPDATE | {uname}     | {user1}    | {user01}  | {uid,uname} | {1,user1}
- public     | t1_u4     | DELETE | {uname,uid} | {user01,1} |           | {uid,uname} | {1,user01}
+ schemaname | tablename | event  |  col_names  |  old_vals  | new_vals  |  key_names  |  key_vals  | status 
+------------+-----------+--------+-------------+------------+-----------+-------------+------------+--------
+ public     | t1_u      | INSERT | {uname,uid} |            | {user1,1} | {uid}       |            |      0
+ public     | t1_u      | UPDATE | {uname}     | {user1}    | {user01}  | {uid}       | {1}        |      0
+ public     | t1_u      | DELETE | {uname,uid} | {user01,1} |           | {uid}       | {1}        |      0
+ public     | t1_u4     | INSERT | {uname,uid} |            | {user1,1} | {uid,uname} |            |      0
+ public     | t1_u4     | UPDATE | {uname}     | {user1}    | {user01}  | {uid,uname} | {1,user1}  |      0
+ public     | t1_u4     | DELETE | {uname,uid} | {user01,1} |           | {uid,uname} | {1,user01} |      0
 (6 rows)
 
 TRUNCATE TABLE __table_logs__;
@@ -221,13 +222,14 @@ SELECT
   old_vals,
   new_vals,
   key_names,
-  key_vals
+  key_vals,
+  status
 FROM
   __table_logs__
 ORDER BY
   txid, ts;
- schemaname | tablename | event | col_names | old_vals | new_vals | key_names | key_vals 
-------------+-----------+-------+-----------+----------+----------+-----------+----------
+ schemaname | tablename | event | col_names | old_vals | new_vals | key_names | key_vals | status 
+------------+-----------+-------+-----------+----------+----------+-----------+----------+--------
 (0 rows)
 
 INSERT INTO t1_u4 VALUES (1, 'user1');
@@ -239,13 +241,14 @@ SELECT
   old_vals,
   new_vals,
   key_names,
-  key_vals
+  key_vals,
+  status
 FROM
   __table_logs__
 ORDER BY
   txid, ts;
- schemaname | tablename | event | col_names | old_vals | new_vals | key_names | key_vals 
-------------+-----------+-------+-----------+----------+----------+-----------+----------
+ schemaname | tablename | event | col_names | old_vals | new_vals | key_names | key_vals | status 
+------------+-----------+-------+-----------+----------+----------+-----------+----------+--------
 (0 rows)
 
 SELECT
@@ -264,14 +267,15 @@ SELECT
   old_vals,
   new_vals,
   key_names,
-  key_vals
+  key_vals,
+  status
 FROM
   __table_logs__
 ORDER BY
   txid, ts;
- schemaname | tablename | event  | col_names | old_vals | new_vals |  key_names  | key_vals  
-------------+-----------+--------+-----------+----------+----------+-------------+-----------
- public     | t1_u4     | UPDATE | {uname}   | {user1}  | {user01} | {uid,uname} | {1,user1}
+ schemaname | tablename | event  | col_names | old_vals | new_vals |  key_names  | key_vals  | status 
+------------+-----------+--------+-----------+----------+----------+-------------+-----------+--------
+ public     | t1_u4     | UPDATE | {uname}   | {user1}  | {user01} | {uid,uname} | {1,user1} |      0
 (1 row)
 
 SELECT
@@ -290,14 +294,15 @@ SELECT
   old_vals,
   new_vals,
   key_names,
-  key_vals
+  key_vals,
+  status
 FROM
   __table_logs__
 ORDER BY
   txid, ts;
- schemaname | tablename | event  | col_names | old_vals | new_vals |  key_names  | key_vals  
-------------+-----------+--------+-----------+----------+----------+-------------+-----------
- public     | t1_u4     | UPDATE | {uname}   | {user1}  | {user01} | {uid,uname} | {1,user1}
+ schemaname | tablename | event  | col_names | old_vals | new_vals |  key_names  | key_vals  | status 
+------------+-----------+--------+-----------+----------+----------+-------------+-----------+--------
+ public     | t1_u4     | UPDATE | {uname}   | {user1}  | {user01} | {uid,uname} | {1,user1} |      0
 (1 row)
 
 SELECT
