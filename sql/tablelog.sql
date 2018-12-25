@@ -86,6 +86,9 @@ UPDATE t1_u4 SET uname = 'user01';
 DELETE FROM t1_u4;
 COMMIT;
 
+SELECT REGEXP_REPLACE(tablelog_replay_logs, '\/\* (.*) \*\/', '/* txid, ts */')
+  FROM tablelog_replay_logs();
+  
 DROP TRIGGER public_t1_u_logging_trigger ON public.t1_u;
 DROP TRIGGER public_t1_u4_logging_trigger ON public.t1_u4;
 
