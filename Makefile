@@ -24,4 +24,4 @@ include $(top_builddir)/src/Makefile.global
 include $(top_srcdir)/contrib/contrib-global.mk
 endif
 
-REGRESS_OPTS += --load-extension=plperl
+REGRESS_OPTS += --load-extension=plv8
