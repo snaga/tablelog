@@ -205,10 +205,10 @@ ORDER BY
   txid, ts;
  schemaname | tablename | event  |  col_names  |  old_vals  | new_vals  |  key_names  |  key_vals  | status 
 ------------+-----------+--------+-------------+------------+-----------+-------------+------------+--------
- public     | t1_u      | INSERT | {uid,uname} |            | {1,user1} | {uid}       |            |      0
+ public     | t1_u      | INSERT | {uid,uname} |            | {1,user1} | {uid}       | {1}        |      0
  public     | t1_u      | UPDATE | {uname}     | {user1}    | {user01}  | {uid}       | {1}        |      0
  public     | t1_u      | DELETE | {uid,uname} | {1,user01} |           | {uid}       | {1}        |      0
- public     | t1_u4     | INSERT | {uid,uname} |            | {1,user1} | {uid,uname} |            |      0
+ public     | t1_u4     | INSERT | {uid,uname} |            | {1,user1} | {uid,uname} | {1,user1}  |      0
  public     | t1_u4     | UPDATE | {uname}     | {user1}    | {user01}  | {uid,uname} | {1,user1}  |      0
  public     | t1_u4     | DELETE | {uid,uname} | {1,user01} |           | {uid,uname} | {1,user01} |      0
 (6 rows)

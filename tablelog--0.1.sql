@@ -136,6 +136,9 @@ $$
 
   // ----------------------------
   // 主キーまたはユニークキーの値をカラム名の順番に配列にする
+  //
+  // UPDATE/DELETEの場合は、更新前のレコードの値を用いる。
+  // INSERTの場合は、更新後（新規作成）のレコードの値を用いる。
   // ----------------------------
   if (typeof OLD !== 'undefined') {
     var key_vals = [];
@@ -144,8 +147,12 @@ $$
     });
     var key_vals_literal = "ARRAY['" + key_vals.join("','") + "']";
   }
-  else {
-    var key_vals_literal = 'null';
+  else if (typeof NEW !== 'undefined') {
+    var key_vals = [];
+    key_names.forEach(function(k) {
+      key_vals.push(NEW[k]);
+    });
+    var key_vals_literal = "ARRAY['" + key_vals.join("','") + "']";
   }
 
   //plv8.elog(NOTICE, "key_vals_literal = ", key_vals_literal);
@@ -274,4 +281,3 @@ BEGIN
 END
 $$
 LANGUAGE 'plpgsql';
-
