@@ -17,13 +17,14 @@ tablelogを使うことによって、テーブルへの更新内容を後から
 tablelogが稼働する条件は以下の通りです。
 
 * PostgreSQL 9.4以降
-* PL/Perl
+* PL/v8
 * 対象となるテーブルに主キーまたはユニーク制約が作成されていること
 
-tablelogでは、トリガをPL/Perlで実装しています。
+tablelogでは、トリガをPL/v8で実装しています。
 
 これは、トリガで必要となる機能の一部をPL/pgSQLでは実装できないこと、お
-よびPL/PerlであればAmazonのRDS for PostgreSQLで利用できるためです。
+よびPL/v8であれば複数のDBaaS（RDS for PostgreSQLやAzure Database for
+PostgreSQL）で利用できるためです。
 
 
 ## インストール方法
@@ -33,7 +34,7 @@ tablelogでは、トリガをPL/Perlで実装しています。
 
 ```
 env USE_PGXS=1 make install
-psql -c 'create extension plperl' dbname
+psql -c 'create extension plv8' dbname
 psql -c 'create extension tablelog' dbname
 ````
 
@@ -44,7 +45,7 @@ SQL関数やオブジェクトを直接作成してください。
 
 ```
 vi tablelog--X.X.sql
-psql -c 'create extension plperl' dbname
+psql -c 'create extension plv8' dbname
 psql -f tablelog--X.X.sql dbname
 ```
 
@@ -54,16 +55,16 @@ psql -f tablelog--X.X.sql dbname
 ユーザが直接参照する、または目にするSQL関数とオブジェクトは以下の通りで
 す。
 
-* tablelog_enable_logging 関数 - 更新処理のロギングを開始する
-* tablelog_disable_logging 関数 - 更新処理のロギングを終了する
-* tablelog_logging_trigger 関数 - 各テーブルに設定されるロギング用トリガ
-* __table_logs__ テーブル - 更新処理が記録されるログテーブル
+* `tablelog_enable_logging` 関数 - 更新処理のロギングを開始する
+* `tablelog_disable_logging` 関数 - 更新処理のロギングを終了する
+* `tablelog_logging_trigger` 関数 - 各テーブルに設定されるロギング用トリガ
+* `__table_logs__` テーブル - 更新処理が記録されるログテーブル
 
 
 ## 使い方
 
 テーブルのロギングを開始する場合には、スキーマ名とテーブル名を引数に
-与えて tablelog_enable_logging 関数を実行します。
+与えて `tablelog_enable_logging` 関数を実行します。
 
 ```
 dbname=# SELECT tablelog_enable_logging('public', 't1');
@@ -116,14 +117,14 @@ COMMIT
 dbname=# SELECT * FROM __table_logs__;
                ts                | txid | dbuser | schemaname | tablename | event  |  col_names  |  old_vals  | new_vals  |  key_names  |  key_vals  | status
 ---------------------------------+------+--------+------------+-----------+--------+-------------+------------+-----------+-------------+------------+--------
- Wed Dec 19 20:39:33.365696 2018 | 4736 | snaga  | public     | t1        | INSERT | {uname,uid} |            | {user1,1} | {uid,uname} |            |      0
+ Wed Dec 19 20:39:33.365696 2018 | 4736 | snaga  | public     | t1        | INSERT | {uname,uid} |            | {user1,1} | {uid,uname} | {1,user1}  |      0
  Wed Dec 19 20:39:33.366558 2018 | 4736 | snaga  | public     | t1        | UPDATE | {uname}     | {user1}    | {user01}  | {uid,uname} | {1,user1}  |      0
  Wed Dec 19 20:39:33.367174 2018 | 4736 | snaga  | public     | t1        | DELETE | {uname,uid} | {user01,1} |           | {uid,uname} | {1,user01} |      0
 (3 rows)
 
 ```
 
-テーブルのロギングを停止するには tablelog_disable_logging 関数を使います。
+テーブルのロギングを停止するには `tablelog_disable_logging` 関数を使います。
 
 ```
 dbname=# SELECT tablelog_disable_logging('public', 't1');
@@ -150,15 +151,15 @@ dbname=#
 | event      | text                        | イベント名         | 更新処理の種別（INSERT/UPDATE/DELETEのいずれか）        |
 | col_names  | text[]                      | カラム名リスト     | 更新されたカラム名のリスト                              |
 | old_vals   | text[]                      | 更新前の値リスト   | 更新される前の値のリスト。INSERT時はNULL。              |
-| new_vals   | text[]                      | 更新後の値リスト   | 更新された後の値のリスト。DELETE字はNULL。              |
+| new_vals   | text[]                      | 更新後の値リスト   | 更新された後の値のリスト。DELETE時はNULL。              |
 | key_names  | text[]                      | キーカラムリスト   | レコードを特定する主キー/ユニークキーのカラム名リスト   |
 | key_vals   | text[]                      | キー値リスト       | レコードを特定する主キー/ユニークキーの値リスト         |
-| status     | smallint                    |  ログのステータス  | 作成直後は'0'。それ以外はユーザ定義。                   |
+| status     | smallint                    | ログのステータス   | 作成直後は'0'。それ以外はユーザ定義。                   |
 
 
 ## 開発者
 
-Satoshi Nagayasu <snaga _at_ uptime _dot_ jp>
+Satoshi Nagayasu \<snaga _at_ uptime _dot_ jp\>
 
 
 EOF
