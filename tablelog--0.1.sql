@@ -124,91 +124,124 @@ CREATE OR REPLACE FUNCTION tablelog_logging_trigger()
   RETURNS TRIGGER
 AS
 $$
-  # ----------------------------
-  # 主キーまたはユニークキーを構成するカラム名を取得する
-  # ----------------------------
-  @key_names = split(/,/, ${$_TD->{args}}[0]);
-  $key_names_literal = "ARRAY['" . join("','", @key_names) . "']";
+  //plv8.elog(NOTICE, "TG_ARGV = ", TG_ARGV[0]);
 
-  # ----------------------------
-  # 主キーまたはユニークキーの値をカラム名の順番に配列にする
-  # ----------------------------
-  if (defined($_TD->{old})) {
-    @key_vals = ();
-    foreach (@key_names) {
-      push(@key_vals, $_TD->{old}{$_});
-    }
-    $key_vals_literal = "ARRAY['" . join("','", @key_vals) . "']";
+  // ----------------------------
+  // 主キーまたはユニークキーを構成するカラム名を取得する
+  //
+  // ここで取得するカラム名は、テーブルにトリガを設定した際に
+  // トリガ関数への引数として明示的に設定したものを使う。
+  // ----------------------------
+  var key_names = TG_ARGV[0].split(',');
+  var key_names_literal = "ARRAY['" + key_names.join("','") + "']";
+
+  //plv8.elog(NOTICE, "key_names_literal = ", key_names_literal);
+
+  // ----------------------------
+  // 主キーまたはユニークキーの値をカラム名の順番に配列にする
+  //
+  // UPDATE/DELETEの場合は、更新前のレコードの値を用いる。
+  // INSERTの場合は、更新後（新規作成）のレコードの値を用いる。
+  // ----------------------------
+  if (typeof OLD !== 'undefined') {
+    var key_vals = [];
+    key_names.forEach(function(k) {
+      key_vals.push(OLD[k]);
+    });
+    var key_vals_literal = "ARRAY['" + key_vals.join("','") + "']";
   }
-  else {
-    $key_vals_literal = 'null';
+  else if (typeof NEW !== 'undefined') {
+    var key_vals = [];
+    key_names.forEach(function(k) {
+      key_vals.push(NEW[k]);
+    });
+    var key_vals_literal = "ARRAY['" + key_vals.join("','") + "']";
   }
 
-  # ----------------------------
-  # テーブルの全カラム名を配列にする
-  # ----------------------------
-  @cols = ();
-  if (defined($_TD->{old})) {
-    push(@cols, keys $_TD->{old});
+  //plv8.elog(NOTICE, "key_vals_literal = ", key_vals_literal);
+
+  // ----------------------------
+  // テーブルの全カラム名を配列にする
+  //
+  // UPDATE/DELETEの場合は、更新前のレコードから取得する。
+  // INSERTの場合は、更新後（新規作成）のレコードから取得する。
+  // ----------------------------
+  var cols = [];
+  if (typeof OLD !== 'undefined') {
+    cols = Object.keys(OLD);
   }
-  elsif (defined($_TD->{new})) {
-    push(@cols, keys $_TD->{new});
+  else if (typeof NEW !== 'undefined') {
+    cols = Object.keys(NEW);
   }
 
-  # ----------------------------
-  # UPDATEの場合は、更新のあったカラムに絞る
-  # ----------------------------
-  if (defined($_TD->{old}) && defined($_TD->{new})) {
-    @changed_cols = ();
-    foreach (@cols) {
-      if ($_TD->{old}{$_} ne $_TD->{new}{$_}) {
-        push(@changed_cols, $_);
+  //plv8.elog(NOTICE, "cols = ", cols);
+
+  // ----------------------------
+  // UPDATEの場合は、値が変更されたカラムのみをロギング対象とする
+  // ----------------------------
+  if (typeof OLD !== 'undefined' && typeof NEW !== 'undefined') {
+    var changed_cols = [];
+    cols.forEach(function(c) {
+      if (OLD[c] !== NEW[c]) {
+        changed_cols.push(c);
       }
-    }
-    @cols = @changed_cols;
+    });
+    cols = changed_cols;
   }
 
-  $col_names_literal = "ARRAY['" . join("','", @cols) . "']";
+  var col_names_literal = "ARRAY['" + cols.join("','") + "']";
 
-  # ----------------------------------
-  # 更新前のレコードの値をカラム名の順番に配列にする
-  # ----------------------------------
-  if (defined($_TD->{old})) {
-    @old_vals = ();
-    foreach (@cols) {
-      push(@old_vals, $_TD->{old}{$_});
-    }
-    $old_vals_literal = "ARRAY['" . join("','", @old_vals) . "']";
+  //plv8.elog(NOTICE, "col_names_literal = ", col_names_literal);
+
+  // ----------------------------------
+  // 更新前のレコードの値をカラム名の順番に配列にする
+  //
+  // UPDATE/DELETEの場合のみ記録される。
+  // INSERTの場合はNULLとなる。
+  // ----------------------------------
+  if (typeof OLD !== 'undefined') {
+    var old_vals = [];
+    cols.forEach(function (c) {
+      old_vals.push(OLD[c]);
+    });
+    var old_vals_literal = "ARRAY['" + old_vals.join("','") + "']";
   }
   else {
-    $old_vals_literal = 'null';
+    var old_vals_literal = 'null';
   }
 
-  # ----------------------------------
-  # 更新後のレコードの値をカラム名の順番に配列にする
-  # ----------------------------------
-  if (defined($_TD->{new})) {
-    @new_vals = ();
-    foreach (@cols) {
-      push(@new_vals, $_TD->{new}{$_});
-    }
-    $new_vals_literal = "ARRAY['" . join("','", @new_vals) . "']";
+  //plv8.elog(NOTICE, "old_vals_literal = ", old_vals_literal);
+
+  // ----------------------------------
+  // 更新後のレコードの値をカラム名の順番に配列にする
+  //
+  // INSERT/UPDATEの場合のみ記録される。
+  // DELETEの場合はNULLとなる。
+  // ----------------------------------
+  if (typeof NEW !== 'undefined') {
+    var new_vals = [];
+    cols.forEach(function (c) {
+      new_vals.push(NEW[c]);
+    });
+    var new_vals_literal = "ARRAY['" + new_vals.join("','") + "']";
   }
   else {
-    $new_vals_literal = 'null';
+    var new_vals_literal = 'null';
   }
 
-  # ----------------------------------
-  # 更新情報をログテーブルに記録する
-  # ----------------------------------
-  $q = "INSERT INTO __table_logs__ VALUES(clock_timestamp(), txid_current(), current_user, '" . $_TD->{table_schema} . "', '" . $_TD->{table_name} . "', '" . $_TD->{event} . "', " . $col_names_literal . ", " . $old_vals_literal . ", " . $new_vals_literal . ", " . $key_names_literal . ", " . $key_vals_literal . ")";
-  elog(DEBUG, $q);
+  //plv8.elog(NOTICE, "new_vals_literal = ", new_vals_literal);
+
+  // ----------------------------------
+  // 更新情報をログテーブルに記録する
+  // ----------------------------------
+  var q = "INSERT INTO __table_logs__ VALUES(clock_timestamp(), txid_current(), current_user, '" + TG_TABLE_SCHEMA+ "', '" + TG_TABLE_NAME + "', '" + TG_OP + "', " + col_names_literal + ", " + old_vals_literal + ", " + new_vals_literal + ", " + key_names_literal + ", " + key_vals_literal + ")";
+  //plv8.elog(NOTICE, q);
   
-  $rs = spi_exec_query($q);
+  plv8.execute(q);
 
   return;
 $$
-LANGUAGE 'plperl';
+LANGUAGE 'plv8';
 
 CREATE OR REPLACE FUNCTION tablelog_enable_logging(schema_name TEXT, table_name TEXT)
   RETURNS boolean
@@ -260,4 +293,3 @@ BEGIN
 END
 $$
 LANGUAGE 'plpgsql';
-
