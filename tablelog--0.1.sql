@@ -313,7 +313,6 @@ DECLARE
   _set_clause TEXT;
   _columns_clause TEXT;
   _values_clause TEXT;
-  _txid BIGINT;
 BEGIN
   RETURN NEXT 'BEGIN;';
 
@@ -330,14 +329,8 @@ BEGIN
     WHERE
       status = 0
     ORDER BY
-      txid,ts
+      ts
     LOOP
-
-    IF _txid <> r.txid THEN
-      RETURN NEXT 'COMMIT;';
-      RETURN NEXT 'BEGIN;';
-    END IF;
-    _txid = r.txid;
 
     query = '/* ' || r.txid || ', ' || r.ts || ' */ ';
     schema_table_name = r.schemaname || '.' || r.tablename;
