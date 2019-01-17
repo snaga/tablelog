@@ -187,6 +187,12 @@ $$
       }
     });
     cols = changed_cols;
+    if (changed_cols.length == 0) {
+       // UPDATEされても値が変わらない場合にはログは記録しない。
+       //rs = plv8.execute('SELECT txid_current()');
+       //plv8.elog(NOTICE, "Updated, but nothing changed: txid = ", rs[0]['txid_current']);
+       return;
+    }
   }
 
   var col_names_literal = "ARRAY['" + cols.join("','") + "']";
