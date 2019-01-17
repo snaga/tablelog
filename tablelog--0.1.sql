@@ -187,6 +187,12 @@ $$
       }
     });
     cols = changed_cols;
+    if (changed_cols.length == 0) {
+       // UPDATEされても値が変わらない場合にはログは記録しない。
+       //rs = plv8.execute('SELECT txid_current()');
+       //plv8.elog(NOTICE, "Updated, but nothing changed: txid = ", rs[0]['txid_current']);
+       return;
+    }
   }
 
   var col_names_literal = "ARRAY['" + cols.join("','") + "']";
@@ -290,6 +296,129 @@ BEGIN
   EXECUTE ddl;
 
   RETURN true;
+END
+$$
+LANGUAGE 'plpgsql';
+
+CREATE OR REPLACE FUNCTION tablelog_replay_logs()
+  RETURNS SETOF TEXT
+AS
+$$
+DECLARE
+  r RECORD;
+  r2 RECORD;
+  query TEXT;
+  schema_table_name TEXT;
+  _key_clause TEXT;
+  _set_clause TEXT;
+  _columns_clause TEXT;
+  _values_clause TEXT;
+  _txid BIGINT;
+BEGIN
+  RETURN NEXT 'BEGIN;';
+
+  FOR r IN
+    SELECT
+      to_char(ts, 'YYYY-MM-DD HH24:MI:SS.US') ts,
+      txid,
+      event,
+      schemaname, tablename,
+      key_names, key_vals,
+      col_names, old_vals, new_vals
+    FROM
+      __table_logs__
+    WHERE
+      status = 0
+    ORDER BY
+      txid,ts
+    LOOP
+
+    IF _txid <> r.txid THEN
+      RETURN NEXT 'COMMIT;';
+      RETURN NEXT 'BEGIN;';
+    END IF;
+    _txid = r.txid;
+
+    query = '/* ' || r.txid || ', ' || r.ts || ' */ ';
+    schema_table_name = r.schemaname || '.' || r.tablename;
+
+    IF r.event = 'INSERT' THEN
+      -- INSERTの場合はカラム名と各カラムの値をカンマ区切りの文字列に
+      -- 組み立てる。
+      _columns_clause = '';
+      _values_clause = '';
+      FOR r2 IN
+        SELECT unnest(r.col_names) col_name,
+               unnest(r.new_vals) new_val
+        LOOP
+
+        IF length(_columns_clause) > 0 THEN
+          _columns_clause = _columns_clause || ',';
+          _values_clause = _values_clause || ',';
+        END IF;
+
+        _columns_clause = _columns_clause || r2.col_name;
+        _values_clause = _values_clause || '''' || r2.new_val || '''';
+      END LOOP;
+
+      query = query || r.event || ' ' || schema_table_name || ' (' || _columns_clause || ') VALUES (' || _values_clause || ')';
+
+    ELSIF r.event = 'UPDATE' THEN
+      -- UPDATEの場合はWHERE句でキーを指定する必要があるため、
+      -- その条件式を組み立てる。
+      _key_clause = '';
+      FOR r2 IN
+        SELECT unnest(r.key_names) key_name,
+               unnest(r.key_vals) key_val
+        LOOP
+
+        IF length(_key_clause) > 0 THEN
+          _key_clause = _key_clause || ' AND ';
+        END IF;
+
+        _key_clause = _key_clause || r2.key_name || ' = ''' || r2.key_val || '''';
+      END LOOP;
+
+      -- UPDATEの場合は、値を更新するためのSET句を組み立てる。
+      _set_clause = '';
+      FOR r2 IN
+        SELECT unnest(r.col_names) col_name,
+               unnest(r.new_vals) new_val
+        LOOP
+
+        IF length(_set_clause) > 0 THEN
+          _set_clause = _set_clause || ',';
+        END IF;
+
+        _set_clause = _set_clause || r2.col_name || ' = ''' || r2.new_val || '''';
+      END LOOP;
+
+      query = query || r.event || ' ' || schema_table_name || ' SET ' || _set_clause || ' WHERE ' || _key_clause;
+
+    ELSIF r.event = 'DELETE' THEN
+      -- DELETEの場合はWHERE句でキーを指定する必要があるため、
+      -- その条件式を組み立てる。
+      _key_clause = '';
+      FOR r2 IN
+        SELECT unnest(r.key_names) key_name,
+               unnest(r.key_vals) key_val
+        LOOP
+
+        IF length(_key_clause) > 0 THEN
+          _key_clause = _key_clause || ' AND ';
+        END IF;
+
+        _key_clause = _key_clause || r2.key_name || ' = ''' || r2.key_val || '''';
+      END LOOP;
+
+      query = query || r.event || ' FROM ' || schema_table_name || ' WHERE ' || _key_clause;
+    END IF;
+    RETURN NEXT query || ';';
+
+  END LOOP;
+  RETURN NEXT 'COMMIT;';
+
+  RETURN;
 END
 $$
 LANGUAGE 'plpgsql';
