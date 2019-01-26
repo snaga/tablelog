@@ -177,13 +177,11 @@ SELECT REGEXP_REPLACE(tablelog_replay_logs, '\/\* (.*) \*\/', '/* txid, ts */')
  /* txid, ts */ INSERT public.t1_u (uid,uname) VALUES ('1','user1');
  /* txid, ts */ UPDATE public.t1_u SET uname = 'user01' WHERE uid = '1';
  /* txid, ts */ DELETE FROM public.t1_u WHERE uid = '1';
- COMMIT;
- BEGIN;
  /* txid, ts */ INSERT public.t1_u4 (uid,uname) VALUES ('1','user1');
  /* txid, ts */ UPDATE public.t1_u4 SET uname = 'user01' WHERE uid = '1' AND uname = 'user1';
  /* txid, ts */ DELETE FROM public.t1_u4 WHERE uid = '1' AND uname = 'user01';
  COMMIT;
-(10 rows)
+(8 rows)
 
   
 DROP TRIGGER public_t1_u_logging_trigger ON public.t1_u;
