@@ -159,7 +159,7 @@ dbname=#
 
 ## 開発者
 
-Satoshi Nagayasu \<snaga _at_ uptime _dot_ jp\>
+Satoshi Nagayasu \<snaga \_at\_ uptime \_dot\_ jp\>
 
 
 EOF
