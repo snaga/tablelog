@@ -137,6 +137,19 @@ $$
 
   //plv8.elog(NOTICE, "key_names_literal = ", key_names_literal);
 
+  function array_to_literal(a) {
+    var b = [];
+    a.forEach(function(s) {
+      if (typeof s === 'string') {
+        b.push(s.replace("'", "''"));
+      }
+      else {
+        b.push(s);
+      }
+    });
+    return "ARRAY['" + b.join("','") + "']"
+  }
+
   // ----------------------------
   // 主キーまたはユニークキーの値をカラム名の順番に配列にする
   //
@@ -148,14 +161,14 @@ $$
     key_names.forEach(function(k) {
       key_vals.push(OLD[k]);
     });
-    var key_vals_literal = "ARRAY['" + key_vals.join("','") + "']";
+    var key_vals_literal = array_to_literal(key_vals);
   }
   else if (typeof NEW !== 'undefined') {
     var key_vals = [];
     key_names.forEach(function(k) {
       key_vals.push(NEW[k]);
     });
-    var key_vals_literal = "ARRAY['" + key_vals.join("','") + "']";
+    var key_vals_literal = array_to_literal(key_vals);
   }
 
   //plv8.elog(NOTICE, "key_vals_literal = ", key_vals_literal);
@@ -210,7 +223,7 @@ $$
     cols.forEach(function (c) {
       old_vals.push(OLD[c]);
     });
-    var old_vals_literal = "ARRAY['" + old_vals.join("','") + "']";
+    var old_vals_literal = array_to_literal(old_vals);
   }
   else {
     var old_vals_literal = 'null';
@@ -229,7 +242,7 @@ $$
     cols.forEach(function (c) {
       new_vals.push(NEW[c]);
     });
-    var new_vals_literal = "ARRAY['" + new_vals.join("','") + "']";
+    var new_vals_literal = array_to_literal(new_vals);
   }
   else {
     var new_vals_literal = 'null';

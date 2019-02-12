@@ -127,7 +127,7 @@ FROM
 ORDER BY
   txid, ts;
 
-INSERT INTO t1_u4 VALUES (1, 'user1');
+INSERT INTO t1_u4 VALUES (1, 'user''1');
 
 SELECT
   schemaname,
@@ -147,7 +147,7 @@ ORDER BY
 SELECT
   tablelog_enable_logging('public', 't1_u4');
 
-UPDATE t1_u4 SET uname = 'user01';
+UPDATE t1_u4 SET uname = 'user''01';
 
 SELECT
   schemaname,
